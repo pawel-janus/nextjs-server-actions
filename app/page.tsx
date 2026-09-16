@@ -1,6 +1,6 @@
 import { Suspense } from 'react';
-import { CitySelector } from '@/app/_components/CitySelector';
-import { RecentSearches } from '@/app/_components/RecentSearches';
+import { CitySelector } from '@/app/_components/CitySelector/CitySelector';
+import { RecentSearches } from '@/app/_components/RecentSearches/RecentSearches';
 
 export default function HomePage() {
   return (

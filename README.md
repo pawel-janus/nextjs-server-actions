@@ -1,98 +1,88 @@
-# Dynamic Routes Weather Dashboard - Next.js POC
+# Server Actions + Forms - Next.js POC
 
-Weather application demonstrating **dynamic routes**, **loading states**, **error boundaries**, and **shared server-side services** with Next.js 16 App Router.
+Weather application demonstrating **Server Actions**, **React 19 form hooks** (`useActionState`, `useFormStatus`), **progressive enhancement**, and **type-safe server mutations** with Next.js 16 App Router.
 
 ## Overview
 
-This POC explores Next.js file-based routing patterns by building a weather dashboard with SEO-friendly URLs (`/weather/warsaw`), automatic loading UI, custom 404 pages, and proper error handling. Each city gets its own route with optimized metadata for search engines.
+This POC explores Next.js Server Actions by replacing traditional API Routes with direct server-side functions. The application demonstrates modern form handling with React 19 hooks, progressive enhancement (works without JavaScript), and seamless integration between client and server.
 
-**Key concepts:** Dynamic route segments `[city]`, `loading.tsx`, `not-found.tsx`, `generateMetadata`, server-side service layer (NOT public API), Zod validation, and `basePath` configuration for subpath deployment.
+**Key concepts:** Server Actions (`'use server'`), `useActionState`, `useFormStatus`, `revalidatePath`, FormData handling, progressive enhancement, and type-safe server mutations.
 
 ## Tech Stack
 
 - **Next.js 16.3.4** - React framework with App Router
-- **React 19.2.8** - Server Components & Client Components
+- **React 19.2.8** - Server Components & new form hooks
 - **TypeScript** - Type safety across frontend and backend
-- **Zod** - Runtime schema validation for external API
+- **Zod** - Runtime schema validation
 - **Tailwind CSS v4** - Styling with CSS-based config
 - **Turbopack** - Fast dev server (Rust-based)
 
 ## Key Features
 
-### Dynamic Routes with Route Parameters
-- File-based routing: `app/weather/[city]/page.tsx`
-- SEO-friendly URLs: `/weather/warsaw`, `/weather/london`
-- Route params accessed via `params.city`
-- Each city has its own shareable URL (no query params)
+### Server Actions
+- `'use server'` directive - mark functions as server-side only
+- Direct function calls from Client Components (no fetch/HTTP)
+- Automatic serialization of FormData
+- Type-safe with full TypeScript support
+- No API Route boilerplate needed
 
-### Automatic Loading States
-- `loading.tsx` - shown during SSR data fetching
-- Automatic UI during async Server Component rendering
-- No manual loading state management needed
-- Streaming SSR with instant visual feedback
+### React 19 Form Hooks
+- **useActionState** - form state management + pending state
+- **useFormStatus** - access form submission status in child components
+- Replaces old patterns: `useState` + `useEffect` + `fetch()`
 
-### Custom 404 Pages
-- `not-found.tsx` - custom error page for invalid cities
-- Triggered by `notFound()` function
-- Route-specific (not global 404)
-- Branded error experience
+### Progressive Enhancement
+- Forms work without JavaScript enabled
+- Server Actions execute even if JS fails to load
+- Graceful degradation built-in
+- Better accessibility and reliability
 
-### SEO Optimization per Route
-- `generateMetadata()` - dynamic metadata per city
-- Unique title and description for each route
-- Search engines index each city separately
-- Social sharing with proper meta tags
+### Cache Revalidation
+- `revalidatePath()` - invalidate cache after mutations
+- Automatic re-rendering of affected routes
+- No manual `router.refresh()` needed
 
-### Server-Side Service Layer
-- `weatherService.ts` - shared data fetching logic
-- **NOT exposed as public API endpoint**
-- Server-to-server only (no HTTP overhead)
-- Reusable across multiple Server Components
-- Zod validation for external API responses
-
-### Error Handling Strategy
-- **404 (City not found)** → `not-found.tsx` custom page
-- **500 (Server error)** → `error.tsx` error boundary
-- Runtime validation with Zod schemas
-- Type-safe error responses
-
-### Subpath Deployment Support
-- `basePath` configuration in `next.config.ts`
-- Deploy to subpath: `https://domain.com/weather-app/`
-- All routes, assets, and links automatically prefixed
-- No code changes needed when enabling
+### Form Data Handling
+- Native FormData API
+- Server-side validation with Zod
+- Type-safe inputs/outputs
+- Error handling built into useActionState
 
 ## Project Structure
 
 ```
 app/
   layout.tsx                    # Root layout, fonts, metadata
-  page.tsx                      # Homepage (landing page, no weather)
+  page.tsx                      # Homepage (landing page with form)
   error.tsx                     # Global error boundary
   globals.css                   # Tailwind + theme config
-  _components/                  # Private components (not routes)
-    CitySelector.tsx            # Client Component: city search form
-    RecentSearches.tsx          # Client Component: recent cities list
+  _lib/
+    citiesStore.ts              # Pure business logic (no framework dependencies)
+  _components/
+    CitySelector/
+      CitySelector.tsx          # Client Component: form with Server Actions
+      actions.ts                # Server Actions for CitySelector
+    RecentSearches/
+      RecentSearches.tsx        # Server Component: displays recent cities
+      actions.ts                # Server Actions for RecentSearches
   weather/                      # Weather feature module
-    _services/                  # Server-side services (NOT public API)
+    _services/                  # Server-side services
       weatherService.ts         # Shared data fetching with Zod validation
     [city]/                     # Dynamic route segment
       page.tsx                  # Weather page (Server Component)
       loading.tsx               # Loading UI (automatic)
       not-found.tsx             # 404 page for invalid cities
-  api/
-    cities/
-      recent/
-        route.ts                # API Route: recent cities (in-memory)
 types/
   weather.ts                    # Shared Zod schemas + TypeScript types
 ```
 
-**Key patterns:**
-- `[city]` - Dynamic route segment (folder name with brackets)
-- `_services/` - Underscore prefix = not a route, server-side only
-- `loading.tsx` - Special file, shown during async rendering
-- `not-found.tsx` - Special file, shown when `notFound()` is called
+**Key changes from POC #3:**
+- ✅ **Added:** Server Actions (collocated with components)
+- ✅ **Added:** `_lib/citiesStore.ts` - Pure business logic layer
+- ❌ **Removed:** `app/api/cities/recent/route.ts` - API Route (no longer needed)
+- 🔄 **Updated:** `CitySelector` - now uses `useActionState` + `useFormStatus`
+- 🔄 **Updated:** `RecentSearches` - now Server Component with Server Actions
+- 📁 **Architecture:** Layered structure (store → actions → components)
 
 ## Getting Started
 
@@ -116,280 +106,357 @@ Open [http://localhost:3000](http://localhost:3000)
 
 1. **Homepage:** Landing page with city search form
 2. **Search city:** Type city name (e.g., "London") → Submit
-3. **Dynamic route:** Redirects to `/weather/london`
-4. **Loading state:** See loading UI for 2 seconds (artificial delay for testing)
-5. **Weather display:** Current weather with temperature, conditions, wind
-6. **Recent searches:** Click any recent city to view its weather
+3. **Server Action:** Form data sent to server (no API call!)
+4. **Dynamic route:** Redirects to `/weather/london`
+5. **Loading state:** Automatic pending state via `useFormStatus`
+6. **Weather display:** Current weather with temperature, conditions, wind
+7. **Recent searches:** Click any recent city (each is a form with Server Action)
 
-### Test Different Flows
+### Test Progressive Enhancement
 
-**Normal flow (valid city):**
+**Disable JavaScript in browser:**
 ```
-http://localhost:3000/weather/warsaw
-→ Loading UI (2s) → Weather display
-```
-
-**404 flow (invalid city):**
-```
-http://localhost:3000/weather/invalidcity123
-→ Loading UI (2s) → Custom "City Not Found" page
+Chrome DevTools → Cmd+Shift+P → "Disable JavaScript"
 ```
 
-**500 flow (simulated server error):**
-```
-http://localhost:3000/weather/error500
-→ Loading UI (2s) → Error page with "Try again" button
-```
-
-### Verify SEO Metadata
-
-```bash
-# Check unique metadata per city
-curl -s http://localhost:3000/weather/warsaw | grep "<title>"
-# Output: <title>Weather in Warsaw</title>
-
-curl -s http://localhost:3000/weather/london | grep "<title>"
-# Output: <title>Weather in London</title>
-```
-
-Each city has unique `<title>` and `<meta name="description">` for SEO.
-
-### Verify SSR
-
-```bash
-# Weather data is in HTML before JS loads
-curl -s http://localhost:3000/weather/warsaw | grep "°C"
-# Output: HTML contains temperature (e.g., "15°C")
-```
-
-✅ Data is in HTML source = Server-Side Rendered!
+Submit the form → **it still works!** Server Action executes server-side.
 
 ## How It Works
 
-### Dynamic Route with Params
-```tsx
-// app/weather/[city]/page.tsx
-export default async function WeatherPage({
-  params,
-}: {
-  params: Promise<{ city: string }>;  // Promise in Next.js 15+
-}) {
-  const { city } = await params;  // Access route parameter
-  
-  // Fetch weather using shared service
-  const weather = await getWeather(city);
-  
-  if (!weather) {
-    notFound();  // Triggers not-found.tsx
-  }
-  
-  return <div>Weather for {city}: {weather.temp_C}°C</div>;
-}
-```
+### Server Actions - Layered Architecture
 
-**URL mapping:**
-- `/weather/warsaw` → `params.city = "warsaw"`
-- `/weather/london` → `params.city = "london"`
-
-### Server-Side Service (NOT API)
+**Layer 1: Pure Business Logic (Store)**
 ```tsx
-// app/weather/_services/weatherService.ts
+// app/_lib/citiesStore.ts
 import { z } from 'zod';
 
-const wttrApiResponseSchema = z.object({
-  current_condition: z.array(z.object({
-    temp_C: z.string(),
-    weatherDesc: z.array(z.object({ value: z.string() })),
-    weatherIconUrl: z.array(z.object({ value: z.string().url() })),
-    windspeedKmph: z.string(),
-  })).min(1),
-});
-
-export async function getWeather(city: string) {
-  const res = await fetch(`https://wttr.in/${city}?format=j1`, {
-    cache: 'no-store',
-  });
-  
-  const text = await res.text();
-  
-  if (text.includes('location not found')) {
-    return null;  // City not found
-  }
-  
-  const data = JSON.parse(text);
-  const result = wttrApiResponseSchema.safeParse(data);
-  
+export function saveCity(city: string): string {
+  // Validation with Zod (with security regex)
+  const result = schema.safeParse({ city: city.trim() });
   if (!result.success) {
-    return null;  // Invalid data
+    throw new Error('Invalid city name');
   }
   
-  return result.data.current_condition[0];
+  // Save to storage (in-memory Map)
+  recentCities.set(result.data.city.toLowerCase(), { ... });
+  
+  return result.data.city;
 }
 ```
 
-**Why NOT an API Route:**
-- No public endpoint exposed
-- No HTTP overhead (direct function call)
-- Server-to-server only
-- Can be reused by multiple Server Components
-
-### Automatic Loading State
+**Layer 2: Server Actions (Framework Integration)**
 ```tsx
-// app/weather/[city]/loading.tsx
-export default function Loading() {
-  return <div>Loading weather...</div>;
+// app/_components/CitySelector/actions.ts
+'use server';
+
+import { redirect } from 'next/navigation';
+import { revalidatePath } from 'next/cache';
+import { saveCity } from '@/app/_lib/citiesStore';
+
+export async function saveRecentCity(
+  prevState: { error?: string } | null,
+  formData: FormData
+): Promise<{ error?: string }> {
+  try {
+    // Pure business logic
+    const normalizedCity = saveCity(formData.get('city'));
+    
+    // Framework side effects
+    revalidatePath('/');
+    redirect(`/weather/${normalizedCity.toLowerCase()}`);
+    
+    return {};
+  } catch (error) {
+    // NEXT_REDIRECT must be re-thrown!
+    if (error instanceof Error && error.message === 'NEXT_REDIRECT') {
+      throw error;
+    }
+    return { error: 'Please enter a valid city name' };
+  }
 }
 ```
 
-Next.js automatically shows `loading.tsx` while `page.tsx` is rendering (async data fetching).
+**Key points:**
+- `'use server'` at top of file = all exports are Server Actions
+- **Separation:** Pure logic (store) vs Framework logic (actions)
+- **redirect()** throws NEXT_REDIRECT - must re-throw in try/catch!
+- Returns serializable data only
 
-### Custom 404 Page
+### Client Component with useActionState
+
 ```tsx
-// app/weather/[city]/not-found.tsx
-export default function NotFound() {
+// app/_components/CitySelector/CitySelector.tsx
+'use client';
+
+import { useActionState } from 'react';
+import { saveRecentCity } from './actions';  // ← Collocated!
+
+export function CitySelector() {
+  const [state, formAction] = useActionState(saveRecentCity, null);
+  
+  return (
+    <form action={formAction}>
+      <input type="text" name="city" required />
+      <SubmitButton />
+      {state?.error && <p>{state.error}</p>}
+    </form>
+  );
+}
+```
+
+**useActionState hook:**
+- `saveRecentCity` - Server Action to execute
+- `null` - initial state
+- Returns: `[state, formAction]`
+  - `state` - return value from Server Action
+  - `formAction` - wrapped action to pass to `<form action={...}>`
+
+### Submit Button with useFormStatus
+
+```tsx
+// app/_components/CitySelector.tsx
+import { useFormStatus } from 'react-dom';
+
+function SubmitButton() {
+  const { pending } = useFormStatus();
+  
+  return (
+    <button type="submit" disabled={pending}>
+      {pending ? 'Loading...' : 'Search'}
+    </button>
+  );
+}
+```
+
+**useFormStatus hook:**
+- **Must be in a child component** (not the form itself)
+- Provides: `{ pending, data, method, action }`
+- `pending` - true while form is submitting
+- Automatically updates when Server Action starts/finishes
+
+### Server Component with Server Action
+
+```tsx
+// app/_components/RecentSearches/RecentSearches.tsx
+import { getRecentCities, saveRecentCityFromFormData } from './actions';
+
+export async function RecentSearches() {
+  const cities = await getRecentCities();
+  
+  // Direct function assignment (no inline action needed)
+  const handleCityClick = saveRecentCityFromFormData;
+  
   return (
     <div>
-      <h1>City Not Found</h1>
-      <Link href="/">Back to Home</Link>
+      {cities.map((city) => (
+        <form action={handleCityClick}>
+          <input type="hidden" name="city" value={city.name} />
+          <button type="submit">{city.name}</button>
+        </form>
+      ))}
     </div>
   );
 }
 ```
 
-Triggered in `page.tsx` with `notFound()` function when city doesn't exist.
-
-### SEO Metadata per Route
+**Server Actions collocated:**
 ```tsx
-// app/weather/[city]/page.tsx
-export async function generateMetadata({
-  params,
-}: {
-  params: Promise<{ city: string }>;
-}) {
-  const { city } = await params;
-  const cityCapitalized = city.charAt(0).toUpperCase() + city.slice(1);
-  
-  return {
-    title: `Weather in ${cityCapitalized}`,
-    description: `Current weather conditions in ${cityCapitalized}`,
-  };
+// app/_components/RecentSearches/actions.ts
+'use server';
+
+export async function getRecentCities(): Promise<RecentCity[]> {
+  return getRecentCitiesFromStore();
+}
+
+export async function saveRecentCityFromFormData(formData: FormData) {
+  const city = formData.get('city') as string;
+  const normalizedCity = saveCity(city);
+  revalidatePath('/');
+  redirect(`/weather/${normalizedCity.toLowerCase()}`);
 }
 ```
 
-Each city route has unique `<title>` and `<meta>` tags for search engines.
+**Pattern:**
+- Actions collocated with components (same folder)
+- Exported functions, not inline
+- Easier to test and reuse
 
-### Client Component Navigation
+### Cache Revalidation
+
 ```tsx
-// app/_components/CitySelector.tsx
-'use client';
+// app/_components/CitySelector/actions.ts
+'use server';
 
-export function CitySelector() {
-  const router = useRouter();
+import { revalidatePath } from 'next/cache';
+
+export async function saveRecentCity(...) {
+  // Pure business logic (store layer)
+  const normalizedCity = saveCity(city);
   
-  const handleSubmit = async (e: FormEvent) => {
-    e.preventDefault();
-    
-    // Save to API
-    await fetch('/api/cities/recent', {
-      method: 'POST',
-      body: JSON.stringify({ city }),
-    });
-    
-    // Navigate to dynamic route
-    router.push(`/weather/${city.toLowerCase()}`);
-  };
+  // Invalidate Router Cache for homepage (back button shows updated list)
+  revalidatePath('/');
   
-  return <form onSubmit={handleSubmit}>...</form>;
+  // Redirect
+  redirect(`/weather/${normalizedCity.toLowerCase()}`);
 }
 ```
 
-Before: `router.push('/?city=warsaw')`  
-After: `router.push('/weather/warsaw')`
+**revalidatePath:**
+- Invalidates Router Cache (client-side) for a specific route
+- Homepage shows updated recent searches after back button
+- All components on that path re-render with fresh data
+- No manual `router.refresh()` needed
+
+### Security: Runtime Validation with Zod
+
+**TypeScript ≠ Runtime Security!**
+
+```typescript
+// types/weather.ts
+export const addCityRequestSchema = z.object({
+  city: z
+    .string()
+    .trim()                                    // Sanitization
+    .min(1, 'City name is required')
+    .max(50, 'City name is too long')
+    .regex(
+      /^[a-zA-ZÀ-ſ\s.\-']+$/,                 // Security filter
+      'City name can only contain letters, spaces, dots, hyphens, and apostrophes'
+    ),
+});
+```
+
+**What this blocks:**
+- ✅ XSS attacks: `<script>alert('XSS')</script>` → BLOCKED
+- ✅ SQL injection: `'; DROP TABLE cities; --` → BLOCKED  
+- ✅ Command injection: `London; rm -rf /` → BLOCKED
+- ✅ DoS: 10MB string → BLOCKED (max 50 chars)
+- ✅ Empty input: `"   "` → BLOCKED (trim + min 1)
+
+**Defense in Depth:**
+1. **Zod validation** (server-side) - CRITICAL for security
+2. **React auto-escape** (rendering) - XSS protection in JSX
+3. **CSP headers** (optional) - Additional layer
+
+**Rule:** Always validate user input server-side with Zod, even if TypeScript types look safe!
 
 ## What I Learned
 
-### Dynamic Routes (File-Based Routing)
-| Pattern | File | URL | Route Param |
-|---------|------|-----|-------------|
-| **Dynamic segment** | `[city]/page.tsx` | `/weather/warsaw` | `params.city = "warsaw"` |
-| **Catch-all** | `[...slug]/page.tsx` | `/docs/a/b/c` | `params.slug = ["a","b","c"]` |
-| **Optional catch-all** | `[[...slug]]/page.tsx` | `/docs` or `/docs/a` | `params.slug = [] or ["a"]` |
+### Server Actions vs API Routes
 
-**This POC uses:** `[city]` - single dynamic segment
+| Feature | Server Actions | API Routes |
+|---------|---------------|------------|
+| **File location** | `app/actions.ts` or inline | `app/api/*/route.ts` |
+| **How to call** | `<form action={...}>` or direct call | `fetch('/api/endpoint')` |
+| **Type safety** | ✅ Full TypeScript support | ⚠️ Manual typing needed |
+| **Boilerplate** | Minimal (just function) | More (NextRequest, NextResponse) |
+| **Progressive enhancement** | ✅ Works without JS | ❌ Requires JS |
+| **Use case** | Forms, mutations | Third-party webhooks, REST API |
 
-### Special File Conventions
-| File | Purpose | When Shown |
-|------|---------|------------|
-| `page.tsx` | Route UI | Always (the actual page) |
-| `loading.tsx` | Loading UI | During async page rendering |
-| `not-found.tsx` | 404 page | When `notFound()` is called |
-| `error.tsx` | Error boundary | When error is thrown in page |
-| `layout.tsx` | Shared UI | Wraps page + children |
+**Rule:** Use Server Actions for forms and mutations. Use API Routes only when you need a public HTTP endpoint.
 
-### Server-Side Services vs API Routes
-| Pattern | File Location | Exposed Publicly | Use Case |
-|---------|---------------|------------------|----------|
-| **Service** | `app/*/\_services/` | ❌ No | Server Components → shared logic |
-| **API Route** | `app/api/*/route.ts` | ✅ Yes | Client Components → HTTP endpoint |
+### React 19 Form Hooks
 
-**Rule:** If only Server Components use it → service (NOT API Route)
-
-### Error Handling Strategy
+#### useActionState
 ```tsx
-// app/weather/[city]/page.tsx
-const weather = await getWeather(city);
+const [state, formAction, isPending] = useActionState(action, initialState);
+```
 
-if (!weather) {
-  notFound();  // → shows not-found.tsx (404)
-}
+- **Replaces:** `useState` + `useEffect` + `fetch()` pattern
+- **state:** Return value from Server Action
+- **formAction:** Wrapped action to pass to `<form action={...}>`
+- **isPending:** Boolean (true during submission)
 
-if (error) {
-  throw new Error('Server error');  // → shows error.tsx (500)
+#### useFormStatus
+```tsx
+const { pending, data, method, action } = useFormStatus();
+```
+
+- **Must be in child component** (inside `<form>`)
+- **pending:** Boolean (true during submission)
+- **data:** FormData being submitted
+- **method:** HTTP method ('GET', 'POST', etc.)
+- **action:** Server Action being executed
+
+### Progressive Enhancement
+
+**Traditional approach (requires JS):**
+```tsx
+<form onSubmit={async (e) => {
+  e.preventDefault();
+  await fetch('/api/submit', { method: 'POST', body: ... });
+  router.push('/success');
+}}>
+```
+
+**Server Actions approach (works without JS):**
+```tsx
+<form action={serverAction}>
+  {/* No JavaScript needed - form submits to server */}
+</form>
+```
+
+If JavaScript loads:
+- Form submits via Server Action (fast, no page reload)
+- `useFormStatus` shows pending state
+- Client-side navigation with `redirect()`
+
+If JavaScript fails:
+- Form submits as traditional POST
+- Server Action still executes
+- Browser follows redirect
+
+### FormData Handling
+
+```tsx
+export async function saveRecentCity(prevState, formData: FormData) {
+  const city = formData.get('city') as string;
+  const file = formData.get('file') as File;
+  
+  // Validate with Zod
+  const result = schema.safeParse({ city });
+  
+  if (!result.success) {
+    return { error: 'Invalid input' };
+  }
+  
+  // Process...
 }
 ```
 
-**404 vs 500:**
-- 404 (Client error) → `notFound()` → custom `not-found.tsx`
-- 500 (Server error) → `throw Error` → error boundary `error.tsx`
+**FormData API:**
+- `formData.get('name')` - single value
+- `formData.getAll('name')` - all values (checkboxes, multi-select)
+- Works with files, text inputs, hidden fields
 
-### Zod for External API Validation
+### Error Handling
+
 ```tsx
-const schema = z.object({
-  current_condition: z.array(...).min(1),
-});
-
-const result = schema.safeParse(apiResponse);
-
-if (!result.success) {
-  console.error(result.error.format());
-  return null;
+export async function saveRecentCity(prevState, formData) {
+  try {
+    // Validate
+    const result = schema.safeParse({ ... });
+    if (!result.success) {
+      return { error: 'Validation failed' };  // Show in UI
+    }
+    
+    // Save to DB
+    await db.save(...);
+    
+    // Success - redirect
+    redirect('/success');
+  } catch (error) {
+    // Don't catch redirect errors!
+    if (error.message === 'NEXT_REDIRECT') {
+      throw error;
+    }
+    
+    return { error: 'Server error' };
+  }
 }
-
-return result.data;  // Type-safe!
 ```
 
-**Why Zod:**
-- Runtime validation (don't trust external APIs)
-- Type inference (schema → TypeScript types)
-- Detailed error messages (`error.format()`)
-
-### basePath for Subpath Deployment
-```tsx
-// next.config.ts
-const nextConfig = {
-  basePath: '/my-app',  // Deployed to: https://domain.com/my-app/
-};
-```
-
-**Automatic prefixing:**
-- `/weather/warsaw` → `/my-app/weather/warsaw`
-- `/_next/static/*` → `/my-app/_next/static/*`
-- `router.push()`, `<Link>`, `<Image>` all work automatically
-
-### Next.js 15+ Changes
-- `params` is now a **Promise** (async Dynamic API)
-- Must use `await params` to access route parameters
-- Enables better Streaming SSR performance
+**Important:** `redirect()` throws `NEXT_REDIRECT` error - re-throw it!
 
 ## Build for Production
 
@@ -404,20 +471,13 @@ Multi-stage Dockerfile optimized for Cloud Run:
 
 ```bash
 # Build locally
-docker build -t nextjs-interactive-weather:latest .
+docker build -t nextjs-server-actions:latest .
 
 # Run locally
-docker run -p 3000:3000 nextjs-interactive-weather:latest
+docker run -p 3000:3000 nextjs-server-actions:latest
 ```
 
-**Features:**
-- Multi-stage build (deps → builder → runner)
-- `output: 'standalone'` for minimal image size
-- node:20-alpine base (small footprint)
-- Non-root user for security
-- Optimized layer caching
-
-**Note:** In-memory storage (recentCities Map) resets when container restarts - this is expected for POC. Phase 3+ will add persistent storage.
+**Note:** In-memory storage (recentCities Map) resets when container restarts - this is expected for POC.
 
 ## Cloud Run Deployment
 
@@ -436,7 +496,7 @@ docker run -p 3000:3000 nextjs-interactive-weather:latest
 # Set variables
 PROJECT_ID=native-dev-506112
 REGION=europe-central2
-SERVICE_NAME=nextjs-dynamic-routes
+SERVICE_NAME=nextjs-server-actions
 
 # 1. Build Docker image with Cloud Build
 gcloud builds submit \
@@ -482,98 +542,50 @@ SERVICE_URL=$(gcloud run services describe ${SERVICE_NAME} \
 
 # Test dynamic routes
 curl -s ${SERVICE_URL}/weather/warsaw | grep "°C"
-curl -s ${SERVICE_URL}/weather/london | grep "<title>"
 
-# Test 404 handling
-curl -s ${SERVICE_URL}/weather/invalidcity | grep "City Not Found"
-
-# Test recent cities API
-curl -s ${SERVICE_URL}/api/cities/recent | jq .
+# Test progressive enhancement (form works without JS)
+curl -X POST ${SERVICE_URL}/ -d "city=London" -L
 ```
-
-If you see weather data, unique titles, and 404 pages → deployment works! ✅
-
-**Note:** In-memory storage (recent cities) resets on Cloud Run cold start - expected for POC.
-
-## How It Works - Full Flow
-
-1. **User visits homepage** (`/`)
-   - Server Component renders landing page
-   - CitySelector (Client Component) and RecentSearches visible
-   - No weather data shown (clean landing page)
-
-2. **User types city** (e.g., "London") in CitySelector
-   - Client Component with `useState` for form input
-   - Submit → POST to `/api/cities/recent` (save to in-memory)
-   - `router.push('/weather/london')` → navigate to dynamic route
-
-3. **Browser navigates to `/weather/london`**
-   - Next.js matches route pattern: `app/weather/[city]/page.tsx`
-   - Passes `params = { city: "london" }` to page
-   - Shows `loading.tsx` (instant visual feedback)
-
-4. **Server Component renders** (SSR)
-   - `await params` → get city from URL
-   - Call `getWeather(city)` → shared service fetches data
-   - Zod validates external API response
-   - If invalid city → `notFound()` → shows `not-found.tsx`
-   - If server error → `throw Error` → shows `error.tsx`
-
-5. **HTML streams to browser**
-   - Loading UI disappears
-   - Weather data displays (temp, conditions, wind)
-   - `generateMetadata()` sets `<title>Weather in London</title>`
-   - SEO-friendly, shareable URL
-
-6. **User clicks recent city**
-   - POST to `/api/cities/recent` (update timestamp)
-   - `router.push('/weather/warsaw')` → new dynamic route
-   - Cycle repeats from step 3
 
 ## Development Progress
 
 ### Phase 1: Project Setup ✅
-- Forked from POC #2 (nextjs-interactive-weather)
+- Forked from POC #3 (nextjs-dynamic-routes)
 - Removed `.git`, `.next`, `node_modules`
-- Updated `package.json` name to `nextjs-dynamic-routes`
+- Updated `package.json` name to `nextjs-server-actions`
 - Initialized fresh git repo with personal GitHub config
 - Created initial commit
 
-### Phase 2: Dynamic Routes ✅
-- Created `app/weather/[city]/page.tsx` (dynamic route)
-- Implemented route params: `params.city`
-- Added `generateMetadata()` for SEO per city
-- Updated routing: `/?city=warsaw` → `/weather/warsaw`
+### Phase 2: Server Actions ✅
+- Created `app/actions.ts` with Server Actions
+- `saveRecentCity()` - form submission + redirect
+- `getRecentCities()` - fetch recent cities
+- `saveRecentCityWithoutRedirect()` - for click handlers
+- Implemented `revalidatePath()` for cache invalidation
 
-### Phase 3: File Conventions ✅
-- Added `app/weather/[city]/loading.tsx` (automatic loading UI)
-- Added `app/weather/[city]/not-found.tsx` (custom 404 page)
-- Implemented `notFound()` trigger for invalid cities
-- Tested loading states (2s artificial delay)
+### Phase 3: Client Component with useActionState ✅
+- Updated `CitySelector.tsx` to use `useActionState`
+- Created `SubmitButton` component with `useFormStatus`
+- Removed `useState`, `useEffect`, `fetch()` patterns
+- Progressive enhancement: works without JavaScript
 
-### Phase 4: Service Layer Architecture ✅
-- Created `app/weather/_services/weatherService.ts`
-- Moved data fetching logic to shared service
-- Implemented Zod validation for external API
-- Proper error handling: 404 vs 500 distinction
+### Phase 4: Server Component with Inline Actions ✅
+- Converted `RecentSearches.tsx` to Server Component
+- Added inline Server Action for city clicks
+- Each city button is a form (progressive enhancement)
+- Removed client-side state management
 
-### Phase 5: Component Updates ✅
-- Updated `CitySelector.tsx`: `router.push('/weather/${city}')`
-- Updated `RecentSearches.tsx`: same routing pattern
-- Homepage now landing page (no weather display)
-- Clean separation: landing page vs weather routes
-
-### Phase 6: Configuration ✅
-- Added `basePath` config (commented, ready for subpath deployment)
-- Documented testing features (delay, error simulation)
-- Updated README.md for POC #3
+### Phase 5: Cleanup ✅
+- Removed `app/api/cities/recent/route.ts` (API Route)
+- Removed entire `app/api/` directory
+- Updated README.md for POC #4
 - All code tested locally
 
 ## Commits
 
 Clean git history:
-1. `Initial commit - forked from POC #2 (nextjs-interactive-weather)`
-2. `Add dynamic routes with loading and error states`
+1. `Initial commit - forked from POC #3 (nextjs-dynamic-routes)`
+2. `Add Server Actions with React 19 form hooks`
 
 Each commit represents a complete working state.
 
@@ -581,60 +593,76 @@ Each commit represents a complete working state.
 
 ## Key Learnings
 
-### Dynamic Routes Best Practices
-- Use `[param]` for single segment (e.g., `/blog/[slug]`)
-- Use `[...param]` for catch-all (e.g., `/docs/[...path]`)
-- Use `[[...param]]` for optional catch-all
-- Always `await params` in Next.js 15+ (params is a Promise)
+### When to Use Server Actions
 
-### File Convention Hierarchy
-```
-app/weather/[city]/
-  layout.tsx        ← Wraps all (shown always)
-  loading.tsx       ← During page async rendering
-  error.tsx         ← Error boundary (500)
-  not-found.tsx     ← 404 page
-  page.tsx          ← Actual route content
-```
+✅ **Use Server Actions for:**
+- Form submissions
+- Data mutations (create, update, delete)
+- Actions triggered by user interaction
+- When you want progressive enhancement
 
-Next.js shows these in order: layout → loading → page (or error/not-found).
+❌ **Don't use Server Actions for:**
+- Third-party webhooks (use API Routes)
+- Public REST API (use API Routes)
+- Real-time data fetching (use React Query/SWR)
 
-### Server-Side Service Pattern
-**Don't create API Routes for server-to-server logic!**
+### Server Action Patterns
 
-❌ **Bad:** `app/api/weather/route.ts` (public endpoint, HTTP overhead)  
-✅ **Good:** `app/weather/_services/weatherService.ts` (server-only function)
-
-**When to use each:**
-- Service: Server Component → Server Component (direct function call)
-- API Route: Client Component → Server (HTTP endpoint)
-
-### Zod Validation Strategy
-- **API boundary:** Validate user input (forms, API requests)
-- **External APIs:** Validate third-party responses (don't trust!)
-- **Type inference:** `z.infer<typeof schema>` → TypeScript types
-- **Error handling:** `safeParse()` → check `success` boolean
-
-### SEO with Dynamic Routes
+**Pattern 1: Separate file with 'use server'**
 ```tsx
-// Each route has unique metadata
-export async function generateMetadata({ params }) {
-  return {
-    title: `Page for ${params.city}`,
-    description: `...`,
-  };
+// app/actions.ts
+'use server';
+
+export async function myAction() {
+  // All exports are Server Actions
 }
 ```
 
-Google indexes each route separately → better search visibility.
+**Pattern 2: Inline in Server Component**
+```tsx
+// app/page.tsx (Server Component)
+export default function Page() {
+  async function handleSubmit(formData: FormData) {
+    'use server';
+    // Inline Server Action
+  }
+  
+  return <form action={handleSubmit}>...</form>;
+}
+```
+
+**Pattern 3: Called from Client Component**
+```tsx
+// app/actions.ts
+'use server';
+export async function myAction() { ... }
+
+// app/component.tsx
+'use client';
+import { myAction } from './actions';
+
+export function Component() {
+  const [state, formAction] = useActionState(myAction, null);
+  return <form action={formAction}>...</form>;
+}
+```
+
+### Progressive Enhancement Checklist
+
+- ✅ Use `<form action={serverAction}>` (not `onSubmit`)
+- ✅ Use native `<button type="submit">` (not `onClick`)
+- ✅ Add `name` attributes to all inputs
+- ✅ Use `required` for required fields (HTML5 validation)
+- ✅ Server Action handles FormData (not JSON)
+- ✅ Test with JavaScript disabled
 
 ## Part of Next.js POC Series
 
-This is POC #3 in a series exploring Next.js App Router patterns:
+This is POC #4 in a series exploring Next.js App Router patterns:
 1. ✅ **Next.js SSR Basics** - Server-Side Rendering fundamentals
 2. ✅ **Interactive Weather Dashboard** - Client Components + API Routes
-3. ✅ **Dynamic Routes Weather Dashboard** ← You are here
-4. 🔄 **Server Actions + Forms** - Progressive enhancement
+3. ✅ **Dynamic Routes Weather Dashboard** - File-based routing patterns
+4. ✅ **Server Actions + Forms** ← You are here
 5. 🔄 **ISR/SSG Strategies** - Static generation + revalidation
 6. 🔄 **Route Groups** - Organizing routes without URL changes
 7. 🔄 **Optimizations** - Image, Script, Bundle analysis
@@ -644,8 +672,8 @@ This is POC #3 in a series exploring Next.js App Router patterns:
 
 ---
 
-**Learning focus:** Dynamic routes, loading states, error handling, SEO, service layer  
+**Learning focus:** Server Actions, React 19 form hooks, progressive enhancement, type-safe mutations  
 **Status:** ✅ Complete (local development)  
-**Production URL:** TBD (deployment in progress)  
+**Production URL:** TBD (deployment pending)  
 **Repository:** TBD (GitHub push pending)  
-**Next POC:** #4 - Server Actions + Forms
+**Next POC:** #5 - ISR/SSG Strategies

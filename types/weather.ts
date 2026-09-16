@@ -14,7 +14,10 @@ export type WeatherData = z.infer<typeof weatherDataSchema>;
 
 // Recent city schema
 export const recentCitySchema = z.object({
-  name: z.string().min(1),
+  name: z
+    .string()
+    .min(1, 'City name is required')
+    .max(50, 'City name is too long'),
   timestamp: z.number().int().positive(),
 });
 
@@ -22,7 +25,15 @@ export type RecentCity = z.infer<typeof recentCitySchema>;
 
 // API request/response schemas
 export const addCityRequestSchema = z.object({
-  city: z.string().min(1).max(100),
+  city: z
+    .string()
+    .trim()
+    .min(1, 'City name is required')
+    .max(50, 'City name is too long (max 50 characters)')
+    .regex(
+      /^[a-zA-ZÀ-ſ\s.\-']+$/,
+      'City name can only contain letters, spaces, dots, hyphens, and apostrophes'
+    ),
 });
 
 export type AddCityRequest = z.infer<typeof addCityRequestSchema>;
