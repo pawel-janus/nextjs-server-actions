@@ -589,7 +589,7 @@ Clean git history:
 
 Each commit represents a complete working state.
 
-**GitHub:** TBD (will be created after deployment)
+**GitHub:** https://github.com/pawel-janus/nextjs-server-actions
 
 ## Key Learnings
 
@@ -673,7 +673,7 @@ This is POC #4 in a series exploring Next.js App Router patterns:
 ---
 
 **Learning focus:** Server Actions, React 19 form hooks, progressive enhancement, type-safe mutations  
-**Status:** ✅ Complete (local development)  
-**Production URL:** TBD (deployment pending)  
-**Repository:** TBD (GitHub push pending)  
+**Status:** ✅ Complete  
+**Production:** Deployed to Cloud Run (see deployment instructions above for URL)  
+**Repository:** https://github.com/pawel-janus/nextjs-server-actions  
 **Next POC:** #5 - ISR/SSG Strategies
